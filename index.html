@@ -1,10 +1,35 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<style> /* set the CSS */
-</style>
-<body>
-<h1> TA Tree </h1>
-<!-- load the d3.js library -->    
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="js/index.js"></script>
-</body>
+<html>
+  <body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <div id="viz"></div>
+
+
+    <script>
+      d3.text("tas_3.csv", function(datasetText) {
+
+        var parsedCSV = d3.csv.parseRows(datasetText);
+
+        var sampleHTML = d3.select("#viz");
+
+
+        
+        var viz = d3.select('#viz');
+        var svg = viz.selectAll("svg").data(parsedCSV).enter().append("svg").attr('width', 110).attr('height', 110);
+        var group = svg.append("g");
+
+        var circle = group.append('circle')
+                          .attr('cx', 50).attr('cy', 50).attr('r', 30).attr('fill', '#26963c')
+
+        group.append('text')
+             .attr('x', 25).attr('y', 50).attr('font-size', '10px')
+             .text(function(d) { return d[1] + " " + d[2];})
+      });
+
+
+
+
+    </script>
+  </body>
+</html>
