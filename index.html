@@ -1,35 +1,385 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<html>
-  <body>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <div id="viz"></div>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<style>
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+
+path.link.twofive {
+  opacity: 0.25;
+}
+
+path.link.fivezero {
+  opacity: 0.50;
+}
+
+path.link.sevenfive {
+  opacity: 0.75;
+}
+
+path.link.onezerozero {
+  opacity: 1.0;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+text {
+  fill: #000;
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+</style>
+<body>
+<script>
+
+var testOutput;
+var filenames = [];
+filenames[0] = "tas_3.csv";
+filenames[1] =  "tas_family.csv";
 
 
-    <script>
-      d3.text("tas_3.csv", function(datasetText) {
+parseList(filenames);
 
-        var parsedCSV = d3.csv.parseRows(datasetText);
+function parseList(filenames){
+  var q = queue();
+  filenames.forEach(function(d) {
+    //add your csv call to the queue
+    q.defer(function(callback) {
+      d3.text(d,function(datasetText) { 
+        var parsedRes = d3.csv.parseRows(datasetText);
+        callback(null, parsedRes) });
+    });
+  });
 
-        var sampleHTML = d3.select("#viz");
-
-
-        
-        var viz = d3.select('#viz');
-        var svg = viz.selectAll("svg").data(parsedCSV).enter().append("svg").attr('width', 110).attr('height', 110);
-        var group = svg.append("g");
-
-        var circle = group.append('circle')
-                          .attr('cx', 50).attr('cy', 50).attr('r', 30).attr('fill', '#26963c')
-
-        group.append('text')
-             .attr('x', 25).attr('y', 50).attr('font-size', '10px')
-             .text(function(d) { return d[1] + " " + d[2];})
-      });
+  q.awaitAll(restOfCode)
+}    
 
 
+function restOfCode(err, results) {
+  //results is an array of each of your csv results
+  parsedTACSV = results[0];
+   parsedFamilyCSV = results[1];
+  nodes = [];
+   links = [];
+
+  parsedTACSV.forEach(function(nodeInfo) {
+      nodes[nodeInfo[0]] = nodeInfo;
+  });
+
+  var index = 0;
+  for (index = 0; index < nodes.length; index++) {
+
+    if (typeof nodes[index] == 'undefined') {
+      nodes[index] = [];
+    }
+  }
+
+  var i = 0;
+  parsedFamilyCSV.forEach(function (family) { 
+      var taId = family[4];
+      var parentId142 = family[1];
+      var parentId143 = family[2];
+
+      var taNode = nodes[taId];
+
+      if (parentId142 !== "NULL") {
+
+        var link = {source: parseInt(parentId142), target: parseInt(taId), value: 100, type: "fivezero"};
+        links[i] = link;
+        i++;
+      }
+
+      if (parentId143 !== "NULL") {
+        var link = {source: parseInt(parentId143), target: parseInt(taId), value: 100, type: "fivezero"};
+        links[i] = link;
+        i++;
+      }
+  });
+
+    var width = 10000,
+    height = 10000;
+
+    var force = d3.layout.force()
+        .nodes(nodes)
+        .links(links)
+        .size([width, height])
+        .linkDistance(60)
+        .charge(-300)
+        .on("tick", function() {
+          tick(path, node);
+        })
+        .start();
+
+    console.log(force.links());
+    // Set the range
+    var  v = d3.scale.linear().range([0, 100]);
+
+    // Scale the range of the data
+    v.domain([0, d3.max(links, function(d) { return d.value; })]);
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+  // build the arrow.
+  svg.append("svg:defs").selectAll("marker")
+      .data(["end"])      // Different link/path types can be defined here
+    .enter().append("svg:marker")    // This section adds in the arrows
+      .attr("id", String)
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+    .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5");
+
+  // add the links and the arrows
+  var path = svg.append("svg:g").selectAll("path")
+      .data(force.links())
+    .enter().append("svg:path")
+      .attr("class", function(d) { return "link " + d.type; })
+      .attr("marker-end", "url(#end)");
+
+  // define the nodes
+  var node = svg.selectAll(".node")
+      .data(force.nodes())
+    .enter().append("g")
+      .attr("class", "node")
+      .on("click", click)
+      .on("dblclick", dblclick)
+      .call(force.drag);
+
+  // add the nodes
+  node.append("circle")
+      .attr("r", 5);
 
 
-    </script>
-  </body>
+  // add the text 
+  node.append("text")
+      .attr("x", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d[1]; });
+
+
+
+}
+
+
+/*var parsedFamilyCSV;
+d3.text("tas_family.csv", function(datasetText) {
+  console.log(parsedFamilyCSV);
+  parsedFamilyCSV = d3.csv.parseRows(datasetText);
+  console.log(parsedFamilyCSV);
+});
+
+// get the data
+d3.text("tas_3.csv", function(datasetText) {
+
+  var parsedTACSV = d3.csv.parseRows(datasetText);
+  var nodes = {};
+  var links = {};
+
+  /* Compute the distinct nodes from the links.
+  links.forEach(function(link) {
+      /*link.source = nodes[link.source] || 
+          (nodes[link.source] = {name: link.source});
+      link.target = nodes[link.target] || 
+          (nodes[link.target] = {name: link.target});
+      link.value = +link.value;
+  });
+  parsedTACSV.forEach(function(nodeInfo) {
+      nodes[nodeInfo[0]] = nodeInfo;
+  });*/
+
+  
+
+/*var width = 960,
+    height = 500;
+
+var force = d3.layout.force()
+    .nodes(d3.values(parsedCSV))
+    .links(links)
+    .size([width, height])
+    .linkDistance(60)
+    .charge(-300)
+    .on("tick", tick)
+    .start();
+
+// Set the range
+var  v = d3.scale.linear().range([0, 100]);
+
+// Scale the range of the data
+v.domain([0, d3.max(links, function(d) { return d.value; })]);
+
+// asign a type per value to encode opacity
+// links.forEach(function(link) {
+//   if (v(link.value) <= 25) {
+//     link.type = "twofive";
+//   } else if (v(link.value) <= 50 && v(link.value) > 25) {
+//     link.type = "fivezero";
+//   } else if (v(link.value) <= 75 && v(link.value) > 50) {
+//     link.type = "sevenfive";
+//   } else if (v(link.value) <= 100 && v(link.value) > 75) {
+//     link.type = "onezerozero";
+//   }
+// });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// build the arrow.
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"])      // Different link/path types can be defined here
+  .enter().append("svg:marker")    // This section adds in the arrows
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
+
+// add the links and the arrows
+var path = svg.append("svg:g").selectAll("path")
+    .data(force.links())
+  .enter().append("svg:path")
+    .attr("class", function(d) { return "link " + d.type; })
+    .attr("marker-end", "url(#end)");
+
+// define the nodes
+var node = svg.selectAll(".node")
+    .data(force.nodes())
+  .enter().append("g")
+    .attr("class", "node")
+    .on("click", click)
+    .on("dblclick", dblclick)
+    .call(force.drag);
+
+// add the nodes
+node.append("circle")
+    .attr("r", 5);
+
+// add the text 
+node.append("text")
+    .attr("x", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d[1]; });
+
+// add the curvy lines
+function tick() {
+    path.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" + 
+            d.source.x + "," + 
+            d.source.y + "A" + 
+            dr + "," + dr + " 0 0,1 " + 
+            d.target.x + "," + 
+            d.target.y;
+    });
+
+    node
+        .attr("transform", function(d) { 
+        return "translate(" + d.x + "," + d.y + ")"; });
+}
+
+// action to take on mouse click
+function click() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 22)
+        .style("fill", "steelblue")
+        .style("stroke", "lightsteelblue")
+        .style("stroke-width", ".5px")
+        .style("font", "20px sans-serif");
+    d3.select(this).select("circle").transition()
+        .duration(750)
+        .attr("r", 16)
+        .style("fill", "lightsteelblue");
+}
+
+// action to take on mouse double click
+function dblclick() {
+    d3.select(this).select("circle").transition()
+        .duration(750)
+        .attr("r", 6)
+        .style("fill", "#ccc");
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 12)
+        .style("stroke", "none")
+        .style("fill", "black")
+        .style("stroke", "none")
+        .style("font", "10px sans-serif");
+}
+
+});*/
+
+// add the curvy lines
+function tick(path, node) {
+   path.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" + 
+            d.source.x + "," + 
+            d.source.y + "A" + 
+            dr + "," + dr + " 0 0,1 " + 
+            d.target.x + "," + 
+            d.target.y;
+    });
+
+    node
+        .attr("transform", function(d) { 
+        return "translate(" + d.x + "," + d.y + ")"; });
+}
+
+// action to take on mouse click
+function click() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 22)
+        .style("fill", "steelblue")
+        .style("stroke", "lightsteelblue")
+        .style("stroke-width", ".5px")
+        .style("font", "20px sans-serif");
+    d3.select(this).select("circle").transition()
+        .duration(750)
+        .attr("r", 16)
+        .style("fill", "lightsteelblue");
+}
+
+// action to take on mouse double click
+function dblclick() {
+    d3.select(this).select("circle").transition()
+        .duration(750)
+        .attr("r", 6)
+        .style("fill", "#ccc");
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 12)
+        .style("stroke", "none")
+        .style("fill", "black")
+        .style("stroke", "none")
+        .style("font", "10px sans-serif");
+}
+
+</script>
+</body>
 </html>
