@@ -13,6 +13,8 @@ var testOutput;
 var filenames = [];
 filenames[0] = "sample_tas.csv";
 filenames[1] =  "sample_family.csv";
+filenames[2] = "sample_quarters.csv";
+var taColNames = ["id", "f_name", "l_name", "intro_qs", "upper_qs", "net_id", "first_q"];
 
 
 parseList(filenames);
@@ -20,7 +22,7 @@ parseList(filenames);
 function parseList(filenames){
   var q = queue();
   filenames.forEach(function(d) {
-    //add your csv call to the queue
+    // add your csv call to the queue
     q.defer(function(callback) {
       d3.text(d,function(datasetText) { 
         var parsedRes = d3.csv.parseRows(datasetText);
@@ -32,22 +34,33 @@ function parseList(filenames){
 }    
 
 
+// kicked off after all of the csvs have been loaded
+// each csv is loaded into results[i] based on filenames indexing
 function restOfCode(err, results) {
-  //results is an array of each of your csv results
   parsedTACSV = results[0];
-   parsedFamilyCSV = results[1];
+  parsedFamilyCSV = results[1];
+  quarters = results[2];
   nodes = [];
-   links = [];
+  links = [];
 
+  // translate each ta into a dictionary and set up the nodes array of these objects
   parsedTACSV.forEach(function(nodeInfo) {
-      nodes[nodeInfo[0]] = nodeInfo;
+    var nodeDict = {};
+    for (var i = 0; i < nodeInfo.length; i++) {
+      nodeDict[taColNames[i]] = nodeInfo[i];
+    }
+    // assign the ta to the node array at their ta_id index
+    nodes[nodeInfo[0]] = nodeDict;
   });
 
+  // console.log(nodes);
   var index = 0;
   for (index = 0; index < nodes.length; index++) {
 
     if (typeof nodes[index] == 'undefined') {
-      nodes[index] = [];
+      // set the indexes in nodes that doesn't have a TA as an empty
+      // dictionary where the x and y positioning is off the screen
+      nodes[index] = {x:-100, y:-100, fixed:true};
     }
   }
 
@@ -73,26 +86,32 @@ function restOfCode(err, results) {
       }
   });
 
-    var width = 500,
-    height = 500;
 
-    var force = d3.layout.force()
-        .nodes(nodes)
-        .links(links)
-        .size([width, height])
-        .linkDistance(60)
-        .charge(-300)
-        .on("tick", function() {
-          tick(path, node);
-        })
-        .start();
 
-    console.log(force.links());
-    // Set the range
-    var  v = d3.scale.linear().range([0, 100]);
+  var width = 500,
+  height = 500;
 
-    // Scale the range of the data
-    v.domain([0, d3.max(links, function(d) { return d.value; })]);
+  placeNodes(nodes, quarters, height);
+
+
+  // attach everything to the force variable, this is where we link nodes and edges
+  var force = d3.layout.force()
+      .nodes(nodes)
+      .links(links)
+      .size([width, height])
+      .linkDistance(60)
+      .charge(-300)
+      .on("tick", function() {
+        tick(path, node);
+      })
+      .start();
+
+
+  // Set the range
+  var  v = d3.scale.linear().range([0, 100]);
+
+  // Scale the range of the data
+  v.domain([0, d3.max(links, function(d) { return d.value; })]);
 
   var svg = d3.select("body").append("svg")
       .attr("width", width)
@@ -101,7 +120,7 @@ function restOfCode(err, results) {
   // build the arrow.
   svg.append("svg:defs").selectAll("marker")
       .data(["end"])      // Different link/path types can be defined here
-    .enter().append("svg:marker")    // This section adds in the arrows
+      .enter().append("svg:marker")    // This section adds in the arrows
       .attr("id", String)
       .attr("viewBox", "0 -5 10 10")
       .attr("refX", 15)
@@ -115,18 +134,19 @@ function restOfCode(err, results) {
   // add the links and the arrows
   var path = svg.append("svg:g").selectAll("path")
       .data(force.links())
-    .enter().append("svg:path")
+      .enter().append("svg:path")
       .attr("class", function(d) { return "link " + d.type; })
       .attr("marker-end", "url(#end)");
 
   // define the nodes
   var node = svg.selectAll(".node")
       .data(force.nodes())
-    .enter().append("g")
+      .enter().append("g")
       .attr("class", "node")
       .on("click", click)
       .on("dblclick", dblclick)
       .call(force.drag);
+
 
   // add the nodes
   node.append("circle")
@@ -137,7 +157,7 @@ function restOfCode(err, results) {
   node.append("text")
       .attr("x", 12)
       .attr("dy", ".35em")
-      .text(function(d) { return d[1]; });
+      .text(function(d) { return d.f_name + " " + d.l_name; });
 }
 
 
@@ -189,6 +209,50 @@ function dblclick() {
         .style("stroke", "none")
         .style("font", "10px sans-serif");
 }
+
+
+function placeNodes(nodes, quarters, windowHeight) {
+  // console.log(quarters.length);
+  // console.log(windowHeight);
+
+  // var quarterHeight = windowHeight / (quarters.length + 1);
+  // var sections = [];
+  // for ()
+  // console.log(quarters);
+  // quarters[0] == quarter id
+  // quarters[1] == string name
+  // quarters[2] == year
+  quarters.sort(function(t, o) {
+    // hack: 'winter' > 'spring' > 'autumn'
+    // order by year first, then by reverse quarter name
+    var result = parseInt(t[2]) - parseInt(o[2]);
+    if (result == 0) {
+      return -1 * t[1].localeCompare(o[1]);
+    }
+    return result;
+  });
+  // build up mapping of quarter_id -> section of screen
+  var quarterMapping = {};
+  var section = 0;
+  for (var i = 0; i < quarters.length; i++) {
+    quarterMapping[quarters[i][0]] = section;
+    section++;
+  }
+  // go through nodes, print out which section of the screen each node goes in
+  for (var i = 0; i < nodes.length; i++) {
+    // console.log(quarterMapping[nodes[i][6]]);
+  }
+  // see if I can isolate those parts of the panel
+
+  // assign y values to each node, see what happens with x position
+}
+
+function sortQuarters(quarters) {
+  var sorted = [];
+
+  return sorted;
+}
+
 
 </script>
 </body>
