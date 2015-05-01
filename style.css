@@ -5,15 +5,15 @@ path.link {
 }
 
 path.link.twofive {
-  opacity: 0.25;
+  opacity: 1;
 }
 
 path.link.fivezero {
-  opacity: 0.50;
+  opacity: 1;
 }
 
 path.link.sevenfive {
-  opacity: 0.75;
+  opacity: 1;
 }
 
 path.link.onezerozero {
@@ -31,3 +31,26 @@ text {
   font: 10px sans-serif;
   pointer-events: none;
 }
+
+.checkboxgroup {
+  width: 200px;
+  height: 200px;
+  left: 700px;
+  top: 200px;
+  background: #fcfff4;
+  position: absolute;
+}
+
+.checkboxgroup{
+    width: 20em;
+    overflow: auto;
+}
+.checkboxgroup p{
+    width: 7em;
+    text-align: right;
+}
+.checkboxgroup label{
+    width: 12em;
+    float: right;
+}
+

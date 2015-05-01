@@ -7,6 +7,14 @@
 
 </style>
 <body>
+
+    <fieldset class="checkboxgroup">
+        <p>Family Selections</p>
+        <label><input type="radio" name="familySelection">Ancestors</label>
+        <label><input type="radio" name="familySelection">Descendants</label>
+        <label><input type="radio" name="familySelection" checked="checked">All</label>
+    </fieldset>
+
 <script>
 
 var testOutput;
@@ -16,6 +24,21 @@ filenames[1] =  "sample_family.csv";
 filenames[2] = "sample_quarters.csv";
 var taColNames = ["id", "f_name", "l_name", "intro_qs", "upper_qs", "net_id", "first_q"];
 
+var outline = false;
+var tocolor = "fill";
+var towhite = "stroke";
+if (outline) {
+  tocolor = "stroke"
+  towhite = "fill"
+}
+var focus_node = null, highlight_node = null;
+var text_center = false;
+var highlight_node_color = "#8900CC"; //purple
+var highlight_trans = 0.1;
+var default_node_color = "#ccc";
+var default_link_color = "#888";
+
+var clicked = false;
 
 parseList(filenames);
 
@@ -32,7 +55,6 @@ function parseList(filenames){
 
   q.awaitAll(restOfCode)
 }    
-
 
 // kicked off after all of the csvs have been loaded
 // each csv is loaded into results[i] based on filenames indexing
@@ -53,7 +75,6 @@ function restOfCode(err, results) {
     nodes[nodeInfo[0]] = nodeDict;
   });
 
-  // console.log(nodes);
   var index = 0;
   for (index = 0; index < nodes.length; index++) {
 
@@ -87,12 +108,29 @@ function restOfCode(err, results) {
   });
 
 
+  var parentToChildDirectory = new Map();
+  var childToParentDirectory = new Map();
+  links.forEach(function(d) {
+      var children = parentToChildDirectory.get(d.source);
+      var parents = childToParentDirectory.get(d.target);
+      
+      if (children == undefined) {
+        children = new Set();
+      }
+      children.add(d.target);
+      parentToChildDirectory.set(d.source,children);
 
-  var width = 500,
+      if (parents == undefined) {
+        parents = new Set();
+      }
+      parents.add(d.source);
+      childToParentDirectory.set(d.target,parents);
+  });
+
+  width = 500,
   height = 500;
 
   placeNodes(nodes, quarters, height);
-
 
   // attach everything to the force variable, this is where we link nodes and edges
   var force = d3.layout.force()
@@ -115,7 +153,10 @@ function restOfCode(err, results) {
 
   var svg = d3.select("body").append("svg")
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .style("left",150)
+      .style("top", 150)
+      .style("position", "absolute");
 
   // build the arrow.
   svg.append("svg:defs").selectAll("marker")
@@ -143,21 +184,109 @@ function restOfCode(err, results) {
       .data(force.nodes())
       .enter().append("g")
       .attr("class", "node")
-      .on("click", click)
-      .on("dblclick", dblclick)
       .call(force.drag);
 
 
   // add the nodes
-  node.append("circle")
+  var circle = node.append("circle")
       .attr("r", 5);
 
 
   // add the text 
-  node.append("text")
+  var text = node.append("text")
       .attr("x", 12)
       .attr("dy", ".35em")
       .text(function(d) { return d.f_name + " " + d.l_name; });
+
+  // find family
+  node.on("mouseover", function(d) {
+    if (!clicked) {
+      var descendantResults = new Set();
+      getTraversal(d, descendantResults, parentToChildDirectory);
+
+      var ancestorResults = new Set();
+      getTraversal(d, ancestorResults, childToParentDirectory);
+      
+      set_focus(d, circle, text, path, ancestorResults, descendantResults)
+      set_highlight(d, circle, text, path, ancestorResults, descendantResults);
+    }
+  });
+
+  node.on("mouseout", function(d) {
+    if (!clicked) {
+
+          focus_node = null;
+          if (highlight_trans<1)
+          {
+      
+        circle.style("opacity", 1);
+        text.style("opacity", 1);
+        path.style("opacity", 1);
+      }
+      exit_highlight(circle, text, path);
+
+    }
+  });
+
+  node.on("click", function(d) {
+    clicked = true;
+    d3.event.stopPropagation();
+    focus_node = d;
+
+    var descendantResults = new Set();
+    getTraversal(d, descendantResults, parentToChildDirectory);
+
+    var ancestorResults = new Set();
+    getTraversal(d, ancestorResults, childToParentDirectory);
+
+    exit_highlight(circle, text, path);
+    set_focus(d, circle, text, path, ancestorResults, descendantResults)
+    if (highlight_node === null) {
+       set_highlight(d, circle, text, path, ancestorResults, descendantResults);
+    }
+  });
+
+  node.on("dblclick", function(d) {
+    if (focus_node!==null)
+        {
+          focus_node = null;
+          if (highlight_trans<1)
+          {
+      
+        circle.style("opacity", 1);
+        text.style("opacity", 1);
+        path.style("opacity", 1);
+      }
+        }
+      
+      if (highlight_node === null) {
+        exit_highlight(circle, text, path);
+      }
+      clicked = false;
+  });
+
+
+  var elements = document.getElementsByName("familySelection");
+  for (var i=0, len=elements.length; i<len; ++i) {
+    elements[i].onclick = function() {
+      if (focus_node != null) {
+
+        exit_highlight();
+        var descendantResults = new Set();
+        getTraversal(focus_node, descendantResults, parentToChildDirectory);
+
+        var ancestorResults = new Set();
+        getTraversal(focus_node, ancestorResults, childToParentDirectory);
+
+        exit_highlight(circle, text, path);
+        set_focus(focus_node, circle, text, path, ancestorResults, descendantResults);
+
+        set_highlight(focus_node, circle, text, path, ancestorResults, descendantResults);
+
+      }
+    }
+  }
+
 }
 
 
@@ -253,6 +382,123 @@ function sortQuarters(quarters) {
   return sorted;
 }
 
+function getTraversal(d, discovered, directory) {
+  var stack = [];
+  stack.push(d.index);
+  var n = stack.pop();
+  while (n != undefined) {
+    if (!discovered.has(n)) {
+      discovered.add(n);
+      var childNodes = directory.get(n);
+      if (childNodes != undefined) {
+        childNodes.forEach(function(cn) {
+          stack.push(cn);
+        });
+      }
+    }
+    n = stack.pop();
+  }
+
+}
+
+// highlights/boldens the nodes and edges of just the current family
+function set_highlight(d, circle, text, path, ancestorResults, descendantResults)
+{
+
+
+  var selections = getCheckedRadioValue("familySelection");
+
+
+  circle.style("cursor","pointer");
+  if (focus_node!==null) d = focus_node;
+  highlight_node = d;
+
+  if (highlight_node_color!="white")
+  {
+      circle.style(towhite, function(o) {
+                if (o.index == d.index) {
+                  return highlight_node_color;
+                }
+
+                if (ancestorResults.has(o.index) || descendantResults.has(o.index)) {
+                  return "black";
+                }
+
+                return "white";
+      });
+      text.style("font-weight", function(o) {
+                if (ancestorResults.has(o.index) || descendantResults.has(o.index)) {
+                  return "bold";
+                }
+                return "normal";
+      });
+      path.style("stroke", function(o) {
+
+        return ((isNumber(o.score) && o.score>=0)?color(o.score):default_link_color);
+            
+      });
+  }
+}
+
+// sets the focus on current family and lowers opacity fo all other nodes and edges
+function set_focus(d, circle, text, path, ancestorResults, descendantResults)
+{ 
+
+
+  var selections = getCheckedRadioValue("familySelection");
+
+if (highlight_trans<1)  {
+      circle.style("opacity", function(o) {
+                if ((selections != 1 && ancestorResults.has(o.index)) || (selections != 0 && descendantResults.has(o.index))) {
+                  return 1;
+                }
+                return highlight_trans;
+            });
+
+      text.style("opacity", function(o) {
+                if ((selections != 1 && ancestorResults.has(o.index)) || (selections != 0 && descendantResults.has(o.index))) {
+                  return 1;
+                }
+                return highlight_trans;
+            });
+      
+      path.style("opacity", function(o) {
+          if ((selections != 1 && ancestorResults.has(o.target.index)) || (selections != 0 && descendantResults.has(o.source.index))) {
+              return 1;
+            } else {
+              return highlight_trans;
+            }
+      });   
+  }
+}
+
+// removes highlights
+function exit_highlight(circle, text, path)
+{
+  highlight_node = null;
+  if (focus_node===null)
+  {
+    if (highlight_node_color!="white")
+    {
+      circle.style(towhite, "white");
+      text.style("font-weight", "normal");
+      path.style("stroke", function(o) {return (isNumber(o.score) && o.score>=0)?color(o.score):default_link_color});
+    }    
+  }
+}
+
+// utility functions
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+function getCheckedRadioValue(name) {
+    var elements = document.getElementsByName(name);
+
+    for (var i=0, len=elements.length; i<len; ++i) {
+        if (elements[i].checked) return i;
+    }
+}
 
 </script>
 </body>
