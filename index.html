@@ -2,8 +2,65 @@
 <meta charset="utf-8">
 <script src="http://d3js.org/d3.v3.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
 <link rel="stylesheet" type="text/css" href="style.css">
 <style>
+
+path.onefortytwo {
+ fill: none;
+  opacity: 0.50;
+  stroke: #FFB20E;
+  stroke-width: 3.0px;
+}
+
+path.onefortythree {
+     fill: none;
+  opacity: 0.50;
+  stroke: #3548FF;
+  stroke-width: 3.0px;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 8px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+circle {
+  fill: #969199;
+  opacity: .70;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+text {
+  fill: #000;
+  font: 10px sans-serif;
+  pointer-events: none;
+}
 
 </style>
 <body>
@@ -74,41 +131,38 @@ function restOfCode(err, results) {
 
       if (parentId142 !== "NULL") {
 
-        var link = {source: parseInt(parentId142), target: parseInt(taId), value: 100, type: "fivezero"};
+      var link = {source: parseInt(parentId142), target: parseInt(taId), value: 100, type: "onefortytwo"}; 
         links[i] = link;
         i++;
       }
 
       if (parentId143 !== "NULL") {
-        var link = {source: parseInt(parentId143), target: parseInt(taId), value: 100, type: "fivezero"};
+        var link = {source: parseInt(parentId143), target: parseInt(taId), value: 100, type: "onefortythree"};
         links[i] = link;
         i++;
       }
   });
 
 
-
-  var width = 500,
-  height = 500;
+  var width = 700,
+  height = 700;
 
   placeNodes(nodes, quarters, height);
 
 
-  // attach everything to the force variable, this is where we link nodes and edges
   var force = d3.layout.force()
-      .nodes(nodes)
-      .links(links)
-      .size([width, height])
-      .linkDistance(60)
-      .charge(-300)
-      .on("tick", function() {
-        tick(path, node);
-      })
-      .start();
-
+        .nodes(nodes)
+        .links(links)
+        .size([width, height])
+        .linkDistance(200)
+        .charge(-1000)
+        .on("tick", function() {
+          tick(path, node);
+        })
+        .start();
 
   // Set the range
-  var  v = d3.scale.linear().range([0, 100]);
+  var v = d3.scale.linear().range([0, 100]);
 
   // Scale the range of the data
   v.domain([0, d3.max(links, function(d) { return d.value; })]);
@@ -138,6 +192,15 @@ function restOfCode(err, results) {
       .attr("class", function(d) { return "link " + d.type; })
       .attr("marker-end", "url(#end)");
 
+  var tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+         x = "<strong>Name:</strong> <span style='color:red'>" + d["f_name"] + " " + d["l_name"]+ "</span>";
+         x += "</br><strong>Quarters TAing:</strong> <span style='color:red'>" + d["intro_qs"] + "</span>";
+         return x;
+  })
+
   // define the nodes
   var node = svg.selectAll(".node")
       .data(force.nodes())
@@ -145,12 +208,19 @@ function restOfCode(err, results) {
       .attr("class", "node")
       .on("click", click)
       .on("dblclick", dblclick)
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
       .call(force.drag);
 
 
   // add the nodes
   node.append("circle")
-      .attr("r", 5);
+      .attr("r", function(d) { if (d["intro_qs"] !== undefined) { 
+                                    return Math.sqrt(d["intro_qs"] + 12);
+                               } else { 
+                                    return 15;
+                               }
+                            });
 
 
   // add the text 
@@ -158,6 +228,9 @@ function restOfCode(err, results) {
       .attr("x", 12)
       .attr("dy", ".35em")
       .text(function(d) { return d.f_name + " " + d.l_name; });
+
+  node.call(tip);
+
 }
 
 
