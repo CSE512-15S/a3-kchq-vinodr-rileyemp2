@@ -106,6 +106,13 @@ text {
     </label>
   </div>
 
+  <defs>
+    <marker id="markerArrow" markerWidth="13" markerHeight="13" refx="2" refy="6"
+           orient="auto">
+        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
+    </marker>
+  </defs>
+
 <script>
 
 var testOutput;
@@ -440,9 +447,6 @@ function searchNode() {
   var elements = document.getElementsByName("familySelection");
   for (var i=0, len=elements.length; i<len; ++i) {
     elements[i].onclick = function() {
-      if (focus_node != null) {
-
-        exit_highlight();
         var descendantResults = new Set();
         getTraversal(focus_node, descendantResults, parentToChildDirectory);
 
@@ -453,10 +457,96 @@ function searchNode() {
         set_focus(focus_node, circle, text, path, ancestorResults, descendantResults);
 
         set_highlight(focus_node, circle, text, path, ancestorResults, descendantResults);
-
-      }
     }
   }
+
+// Legend/Key drawing
+
+var legendSvgContainer = d3.select("body").append("svg")
+                                     .attr("width", 300)
+                                     .attr("height",1300)
+                                     .style("position", "absolute")
+                                     .style("top", "250px")
+                                     .style("left", "950px");
+
+var svgGL = legendSvgContainer.append("g")
+                       .attr("transform", "translate(0, 0)");
+var squareL = svgGL.append("rect")
+                         .attr("x", 35)
+                         .attr("y", 10)
+                         .attr("width", 250)
+                         .attr("height", 300)
+                         .style("stroke", "black")
+                         .style("stroke-width", 2)
+                         .style("stroke-opacity", "1")
+                         .style("fill", "white");
+
+var squareTextL = svgGL.append("text")
+                    .attr("x", 160)
+                    .attr("y", 40)
+                    .style("font-size", "30px")
+                    .style("text-anchor", "middle")
+                    .text(function(d) { return "Key";});
+
+svgGL.append("circle")
+   .attr("cx", 60)
+   .attr("cy", 80)
+   .attr("r", 15);
+
+svgGL.append("text")
+    .attr("x",100)
+    .attr("y", 85)
+    .style("font-size", "15px")
+    .style("text-anchor", "start")
+    .text(function(d) { return "TA Node";});
+
+svgGL.append("circle")
+     .style("stroke", highlight_node_color)
+     .attr("cx", 60)
+     .attr("cy", 140)
+     .attr("r", 15);
+
+svgGL.append("text")
+    .attr("x",100)
+    .attr("y", 145)
+    .style("font-size", "15px")
+    .style("text-anchor", "start")
+    .text(function(d) { return "Selected TA Node";});
+
+var lineDataEdge1 = [ { "x": 50,   "y": 180}, {"x": 60,   "y": 190}, {"x": 70, "y": 200}];
+var lineDataEdge2 = [ { "x": 50,   "y": 220}, {"x": 60,   "y": 230}, {"x": 70, "y": 240}];
+ 
+ //This is the accessor function we talked about above
+ var lineFunction = d3.svg.line()
+                          .x(function(d) { return d.x; })
+                          .y(function(d) { return d.y; })
+                         .interpolate("linear");
+
+
+svgGL.append("path")
+      .attr("d", lineFunction(lineDataEdge1))
+      .attr("stroke", one42_link)
+      .attr("stroke-width", 2);
+
+svgGL.append("text")
+    .attr("x",100)
+    .attr("y", 190)
+    .style("font-size", "15px")
+    .style("text-anchor", "start")
+    .text(function(d) { return "142 Parent TA to Child TA";});
+
+
+svgGL.append("path")
+      .attr("d", lineFunction(lineDataEdge2))
+      .attr("stroke", one43_link)
+      .attr("stroke-width", 2);
+
+svgGL.append("text")
+    .attr("x",100)
+    .attr("y", 230)
+    .style("font-size", "15px")
+    .style("text-anchor", "start")
+    .text(function(d) { return "143 Parent TA to Child TA";});
 
 }
 
