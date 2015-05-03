@@ -98,16 +98,15 @@ text {
       All
     </label>
   </div>
-
   
 <script>
 
 var testOutput;
 var filenames = [];
-filenames[0] = "sample_tas.csv";
-filenames[1] =  "sample_family.csv";
-filenames[2] = "sample_quarters.csv";
-var taColNames = ["id", "f_name", "l_name", "intro_qs", "upper_qs", "net_id", "first_q"];
+filenames[0] = "tas_3.csv";
+filenames[1] =  "tas_family.csv";
+filenames[2] = "tas_quarters.csv";
+var taColNames = ["id", "f_name", "l_name", "intro_qs", "upper_qs", "net_id", "first_q", "related"];
 
 var outline = false;
 var tocolor = "fill";
@@ -173,7 +172,7 @@ function restOfCode(err, results) {
     if (typeof nodes[index] == 'undefined') {
       // set the indexes in nodes that doesn't have a TA as an empty
       // dictionary where the x and y positioning is off the screen
-      nodes[index] = {x:-10, y:-10, fixed:true, charge:-300};
+      nodes[index] = {x:-10, y:-10, fixed:true, charge:-300, related:false};
     }
   }
 
@@ -184,28 +183,30 @@ function restOfCode(err, results) {
       var parentId143 = family[2];
 
       var taNode = nodes[taId];
+      taNode.related = true;
 
       if (parentId142 !== "NULL") {
-
-      var link = {source: parseInt(parentId142), target: parseInt(taId), value: 100, type: "onefortytwo"}; 
+        var link = {source: parseInt(parentId142), target: parseInt(taId), value: 100, type: "onefortytwo"}; 
         links[i] = link;
         i++;
+        nodes[parentId142].related = true;
       }
 
       if (parentId143 !== "NULL") {
         var link = {source: parseInt(parentId143), target: parseInt(taId), value: 100, type: "onefortythree"};
         links[i] = link;
         i++;
+        nodes[parentId143].related = true;
       }
   });
 
 
-
 // ================== SET UP variables for force ================== 
 
-  width = 800,
+  width = 1020,
   height = 800;
 
+  filterNodes(nodes);
   placeNodes(nodes, quarters, height, width);
 
   var parentToChildDirectory = new Map();
@@ -235,11 +236,10 @@ function restOfCode(err, results) {
       .linkDistance(function(d) {
         d.target.fixed = true;
         d.source.fixed = true;
-        return 10 * (d.target.y - d.source.y);
+        return 10 * lineLength(d.source.x, d.source.y, d.target.x, d.target.y);
       })
-      .charge(function(d) {
-        return -30;
-      })
+      .charge(-30)
+      .gravity(0)
       .on("tick", function() {
         tick(path, node);
       })
@@ -256,8 +256,16 @@ function restOfCode(err, results) {
       .attr("width", width)
       .attr("height", height)
       .style("left",150)
-      //.style("top", 150)
-      .style("position", "absolute");
+      .style("position", "absolute")
+      .style("overflow", "scroll");
+
+// the area to zoom
+var rect =  svg.append("rect")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all");
+
 
   // build the arrow.
   svg.append("svg:defs").selectAll("marker")
@@ -288,6 +296,7 @@ function restOfCode(err, results) {
          x += "</br><strong>Quarters TAing:</strong> <span style='color:red'>" + d["intro_qs"] + "</span>";
          return x;
   })
+
 
   // define the nodes
   var node = svg.selectAll(".node")
@@ -435,7 +444,7 @@ function tick(path, node) {
     });
 
     node.attr("transform", function(d) {
-          d.fixed = true; 
+          d.fixed = true;
           return "translate(" + d.x + "," + d.y + ")"; 
         });
 }
@@ -473,21 +482,37 @@ function dblclick() {
 
 // ================== PROCESSING functions ================== 
 
+function filterNodes(nodes) {
+  // debugger;
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i].related != true) {
+      nodes[i] = {x:-10, y:-10, fixed:true, charge:-300};
+    }
+  }
+}
+
 function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
-  var quarterHeight = windowHeight / (quarters.length + 1);
+  var quarterHeight = 30; //windowHeight / (quarters.length + 1);
   var yOffset = 20;
-  var xOffset = 50;
+  var xOffset = windowWidth / 25;
   // quarter= [quarter id, string name, year]
   quarters.sort(function(t, o) {
-    // hack: 'winter' > 'spring' > 'autumn'
+    // hack: 'winter' > spring' > 'autumn'
     // order by year first, then by reverse-alphabetical quarter name
     var result = parseInt(t[2]) - parseInt(o[2]);
     if (result == 0) {
-      return -1 * t[1].localeCompare(o[1]);
+      // need to fix 'summer' to 'spring' comparison
+      if (t[1] === 'summer' && o[1] === 'spring' ||
+          o[1] === 'summer' && t[1] === 'spring') {
+        return t[1].localeCompare(o[1]);
+      } else {
+        return -1 * t[1].localeCompare(o[1]);
+      }
     }
     return result;
   });
+
   // build up mapping of quarter_id -> section of screen
   var quarterMapping = {};
   var nodesPerSection = [];
@@ -630,11 +655,14 @@ function isNumber(n) {
 
 function getCheckedRadioValue(name) {
     var elements = document.getElementsByName(name);
-    console.log(elements);
     for (var i=0, len=elements.length; i<len; ++i) {
         if (elements[i].checked) return i;
     }
 }
+
+function lineLength(x0, y0, x1, y1){
+    return Math.sqrt((x0 -= x1) * x0 + (y0 -= y1) * y0);
+};
 
 </script>
 </body>
