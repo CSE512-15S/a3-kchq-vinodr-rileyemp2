@@ -17,6 +17,8 @@ filenames[2] = "sample_quarters.csv";
 var taColNames = ["id", "f_name", "l_name", "intro_qs", "upper_qs", "net_id", "first_q"];
 
 
+// ================== PARSE CSVs ================== 
+
 parseList(filenames);
 
 function parseList(filenames){
@@ -33,6 +35,7 @@ function parseList(filenames){
   q.awaitAll(restOfCode)
 }    
 
+// ================== Manipulate data to fit our nodes/links ================== 
 
 // kicked off after all of the csvs have been loaded
 // each csv is loaded into results[i] based on filenames indexing
@@ -60,7 +63,7 @@ function restOfCode(err, results) {
     if (typeof nodes[index] == 'undefined') {
       // set the indexes in nodes that doesn't have a TA as an empty
       // dictionary where the x and y positioning is off the screen
-      nodes[index] = {x:-100, y:-100, fixed:true};
+      nodes[index] = {x:-10, y:-10, fixed:true, charge:-300};
     }
   }
 
@@ -87,11 +90,13 @@ function restOfCode(err, results) {
   });
 
 
+// ================== SET UP variables for force ================== 
 
-  var width = 500,
-  height = 500;
+ var margin = {top: 20, right: 120, bottom: 20, left: 120},
+    width = 960 - margin.right - margin.left,
+    height = 800 - margin.top - margin.bottom;
 
-  placeNodes(nodes, quarters, height);
+  placeNodes(nodes, quarters, height, width);
 
 
   // attach everything to the force variable, this is where we link nodes and edges
@@ -99,13 +104,18 @@ function restOfCode(err, results) {
       .nodes(nodes)
       .links(links)
       .size([width, height])
-      .linkDistance(60)
-      .charge(-300)
+      .linkDistance(function(d) {
+        d.target.fixed = true;
+        d.source.fixed = true;
+        return 10 * (d.target.y - d.source.y);
+      })
+      .charge(function(d) {
+        return -30;
+      })
       .on("tick", function() {
         tick(path, node);
       })
       .start();
-
 
   // Set the range
   var  v = d3.scale.linear().range([0, 100]);
@@ -157,12 +167,21 @@ function restOfCode(err, results) {
   node.append("text")
       .attr("x", 12)
       .attr("dy", ".35em")
-      .text(function(d) { return d.f_name + " " + d.l_name; });
+      .text(function(d) { 
+        if (d.f_name != undefined) {
+          return d.f_name + " " + d.l_name;
+        } else {
+          return "";
+        }
+      });
 }
 
 
+// ================== ACTION functions ================== 
+
 // add the curvy lines
 function tick(path, node) {
+  // debugger;
    path.attr("d", function(d) {
         var dx = d.target.x - d.source.x,
             dy = d.target.y - d.source.y,
@@ -173,11 +192,13 @@ function tick(path, node) {
             dr + "," + dr + " 0 0,1 " + 
             d.target.x + "," + 
             d.target.y;
+
     });
 
-    node
-        .attr("transform", function(d) { 
-        return "translate(" + d.x + "," + d.y + ")"; });
+    node.attr("transform", function(d) {
+          d.fixed = true; 
+          return "translate(" + d.x + "," + d.y + ")"; 
+        });
 }
 
 // action to take on mouse click
@@ -211,14 +232,12 @@ function dblclick() {
 }
 
 
-function placeNodes(nodes, quarters, windowHeight) {
-  // console.log(quarters.length);
-  // console.log(windowHeight);
+// ================== PROCESSING functions ================== 
 
-  // var quarterHeight = windowHeight / (quarters.length + 1);
-  // var sections = [];
-  // for ()
-  // console.log(quarters);
+function placeNodes(nodes, quarters, windowHeight, windowWidth) {
+
+  var quarterHeight = windowHeight / (quarters.length + 1);
+  var yOffset = 20;
   // quarters[0] == quarter id
   // quarters[1] == string name
   // quarters[2] == year
@@ -233,26 +252,32 @@ function placeNodes(nodes, quarters, windowHeight) {
   });
   // build up mapping of quarter_id -> section of screen
   var quarterMapping = {};
+  var nodesPerSection = {};
   var section = 0;
   for (var i = 0; i < quarters.length; i++) {
     quarterMapping[quarters[i][0]] = section;
+    nodesPerSection[section] = 0;
     section++;
   }
-  // go through nodes, print out which section of the screen each node goes in
+  // go through nodes, assign positioning for both x and y
   for (var i = 0; i < nodes.length; i++) {
-    // console.log(quarterMapping[nodes[i][6]]);
+    if (nodes[i].first_q != undefined) {
+        var quarter = quarterMapping[nodes[i].first_q];
+        nodes[i].y = quarter * quarterHeight + yOffset;
+        nodesPerSection[quarter]++;
+    }
   }
-  // see if I can isolate those parts of the panel
 
-  // assign y values to each node, see what happens with x position
+  // for (var i = 0; i < nodes.length; i++) {
+  //   if (nodes[i].first_q != undefined) {
+  //       var quarter = quarterMapping[nodes[i].first_q];
+  //       var numTAs = nodesPerSection[quarter];
+  //       var xOffset = width / numTAs;
+  //       nodes[i].x = 
+  //       nodes[i].fixed = true;
+  //   }
+  // }
 }
-
-function sortQuarters(quarters) {
-  var sorted = [];
-
-  return sorted;
-}
-
 
 </script>
 </body>
