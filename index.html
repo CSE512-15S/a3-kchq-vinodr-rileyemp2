@@ -75,7 +75,6 @@ text {
 </style>
 <body>
  
-  </div>
   <div class="jumbotron">
   <h2 style="padding-left: 10px;">TA Family Tree </br><small>A visualization of the Introductory Programming Teaching Assistant "Family" Tree</small></h2>
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
@@ -217,8 +216,8 @@ function restOfCode(err, results) {
 
 // ================== SET UP variables for force ================== 
 
-  width = 1020,
-  height = 800;
+  width = $(window).width() * 0.75;
+  height = $(window).height() * 0.6;
 
   filterNodes(nodes);
   placeNodes(nodes, quarters, height, width);
@@ -265,13 +264,17 @@ function restOfCode(err, results) {
 
   // Scale the range of the data
   v.domain([0, d3.max(links, function(d) { return d.value; })]);
+  var svgContainer = d3.select("body").append("div")
+                                      .style("height", height + "px")
+                                      .style("width", width + "px")
+                                      .style("left", ($(window).width() * 0.2) + "px")
+                                      .style("position", "absolute")
+                                      .style("overflow-x", "hidden")
+                                      .style("overflow-y", "scroll");
 
-  var svg = d3.select("body").append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .style("left",150)
-      .style("position", "absolute")
-      .style("overflow", "scroll");
+  var svg = svgContainer.append("svg")
+      .attr("width", width + "px")
+      .attr("height", "100%");
 
 // the area to zoom
 var rect =  svg.append("rect")
@@ -463,19 +466,19 @@ function searchNode() {
 // Legend/Key drawing
 
 var legendSvgContainer = d3.select("body").append("svg")
-                                     .attr("width", 300)
-                                     .attr("height",1300)
+                                     .attr("width", ($(window).width() * 0.3) + "px")
+                                     .attr("height",($(window).height() * 0.5) + "px")
                                      .style("position", "absolute")
-                                     .style("top", "250px")
-                                     .style("left", "950px");
+                                     .style("top", ($(window).height() * 0.5) + "px")
+                                     .style("left", "0px");
 
 var svgGL = legendSvgContainer.append("g")
                        .attr("transform", "translate(0, 0)");
 var squareL = svgGL.append("rect")
-                         .attr("x", 35)
+                         .attr("x", 20)
                          .attr("y", 10)
                          .attr("width", 250)
-                         .attr("height", 300)
+                         .attr("height", 250)
                          .style("stroke", "black")
                          .style("stroke-width", 2)
                          .style("stroke-opacity", "1")
@@ -507,7 +510,7 @@ svgGL.append("circle")
      .attr("r", 15);
 
 svgGL.append("text")
-    .attr("x",100)
+    .attr("x",90)
     .attr("y", 145)
     .style("font-size", "15px")
     .style("text-anchor", "start")
@@ -529,7 +532,7 @@ svgGL.append("path")
       .attr("stroke-width", 2);
 
 svgGL.append("text")
-    .attr("x",100)
+    .attr("x",90)
     .attr("y", 190)
     .style("font-size", "15px")
     .style("text-anchor", "start")
@@ -542,7 +545,7 @@ svgGL.append("path")
       .attr("stroke-width", 2);
 
 svgGL.append("text")
-    .attr("x",100)
+    .attr("x",90)
     .attr("y", 230)
     .style("font-size", "15px")
     .style("text-anchor", "start")
