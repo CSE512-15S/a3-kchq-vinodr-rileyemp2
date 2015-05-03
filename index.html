@@ -256,7 +256,7 @@ function restOfCode(err, results) {
       .attr("width", width)
       .attr("height", height)
       .style("left",150)
-      .style("top", 150)
+      //.style("top", 150)
       .style("position", "absolute");
 
   // build the arrow.
@@ -477,12 +477,11 @@ function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
   var quarterHeight = windowHeight / (quarters.length + 1);
   var yOffset = 20;
-  // quarters[0] == quarter id
-  // quarters[1] == string name
-  // quarters[2] == year
+  var xOffset = 50;
+  // quarter= [quarter id, string name, year]
   quarters.sort(function(t, o) {
     // hack: 'winter' > 'spring' > 'autumn'
-    // order by year first, then by reverse quarter name
+    // order by year first, then by reverse-alphabetical quarter name
     var result = parseInt(t[2]) - parseInt(o[2]);
     if (result == 0) {
       return -1 * t[1].localeCompare(o[1]);
@@ -491,19 +490,31 @@ function placeNodes(nodes, quarters, windowHeight, windowWidth) {
   });
   // build up mapping of quarter_id -> section of screen
   var quarterMapping = {};
-  var nodesPerSection = {};
+  var nodesPerSection = [];
   var section = 0;
   for (var i = 0; i < quarters.length; i++) {
     quarterMapping[quarters[i][0]] = section;
-    nodesPerSection[section] = 0;
+    nodesPerSection[section] = [];
     section++;
   }
-  // go through nodes, assign positioning for both x and y
+  // go through nodes, assign positioning for y
   for (var i = 0; i < nodes.length; i++) {
     if (nodes[i].first_q != undefined) {
         var quarter = quarterMapping[nodes[i].first_q];
         nodes[i].y = quarter * quarterHeight + yOffset;
-        nodesPerSection[quarter]++;
+        nodesPerSection[quarter].push(nodes[i]);
+    }
+  }
+  // some hand coded in offset for rows, so same num rows look different
+  // like cookies on a tray :)
+  var oddOffset = 20; 
+  // go through nodes again assigning position for x
+  for (var quarter = 0; quarter < nodesPerSection.length; quarter++) {
+    var nodesInSection = nodesPerSection[quarter];
+    var sectionSize = width / nodesInSection.length;
+    var leftEdge = oddOffset * (quarter % 2) + xOffset;
+    for (var i = 0; i < nodesInSection.length; i++) {
+      nodesInSection[i].x = sectionSize * i + leftEdge;
     }
   }
 
