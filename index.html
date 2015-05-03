@@ -220,6 +220,7 @@ function restOfCode(err, results) {
   height = $(window).height() * 0.6;
 
   treeHeight = 0;
+  quarterHeight = 0;
 
   filterNodes(nodes);
   placeNodes(nodes, quarters, width, height);
@@ -276,9 +277,9 @@ function restOfCode(err, results) {
 
   var svg = svgContainer.append("svg")
       .attr("width", width + "px")
-      .attr("height", "100%");
+      .attr("height", treeHeight + "px");
 
-  svg.call(drawLines(quarters, svg));
+  drawLines(quarters, svg);
 
 // the area to zoom
 var rect =  svg.append("rect")
@@ -562,7 +563,6 @@ svgGL.append("text")
 
 // add the curvy lines
 function tick(path, node) {
-  // debugger;
    path.attr("d", function(d) {
         var dx = d.target.x - d.source.x,
             dy = d.target.y - d.source.y,
@@ -573,7 +573,6 @@ function tick(path, node) {
             dr + "," + dr + " 0 0,1 " + 
             d.target.x + "," + 
             d.target.y;
-
     });
 
     node.attr("transform", function(d) {
@@ -626,7 +625,7 @@ function filterNodes(nodes) {
 
 function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
-  var quarterHeight = 50; //windowHeight / (quarters.length + 1);
+  quarterHeight = 50; //windowHeight / (quarters.length + 1);
   var yOffset = 20;
   // quarter= [quarter id, string name, year]
   quarters.sort(function(t, o) {
@@ -662,6 +661,8 @@ function placeNodes(nodes, quarters, windowHeight, windowWidth) {
         nodesPerSection[quarter].push(nodes[i]);
     }
   }
+  //filterQuarters(quarters, nodesPerSection);
+
   // some hand coded in offset for rows, so same num rows look different
   // like cookies on a tray :)
   var oddOffset = 20; 
@@ -675,14 +676,15 @@ function placeNodes(nodes, quarters, windowHeight, windowWidth) {
     }
   }
 
-  filterQuarters(quarters, nodesPerSection);
 
   treeHeight = quarters.length * quarterHeight + (2 * yOffset);
 }
 
 function filterQuarters(quarters, nodesPerSection) {
   for (var quarter = 0; quarter < nodesPerSection.length; quarter++) {
-    if ()
+    if (nodesPerSection[quarter] == []) {
+      quarters.splice(quarter, 1);
+    }
   }
 }
 
@@ -695,7 +697,7 @@ function drawLines(quarters, svg) {
       .attr("x2", width)
       .attr("y2", quarterHeight * i)
       .attr("stroke-width", 2)
-      .attr("stroke", "black");
+      .attr("stroke", "grey");
   }
 }
 
