@@ -9,9 +9,11 @@
 <!-- Optional theme -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
 
-<!-- Latest compiled and minified JavaScript -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<!-- Latest compiled and minified JavaScript 
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>-->
 <link rel="stylesheet" type="text/css" href="style.css">
+<script type='text/javascript'src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+<script type='text/javascript'src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
 <style>
 
 path.onefortytwo {
@@ -59,7 +61,7 @@ path.onefortythree {
 
 circle {
   fill: #49464A;
-  opacity: .90;
+  opacity: .70;
   stroke: #fff;
   stroke-width: 1.5px;
 }
@@ -79,6 +81,11 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
+<div style="padding-left: 10px" class="ui-widget">
+   <input id="search">
+    <button type="button" onclick="searchNode()">Search</button>
+</div>
+
   <div id="legend" class="col-lg-6">
     <div class="radio">
   <label>
@@ -92,13 +99,13 @@ text {
       Decendants
     </label>
   </div>
-  <div class="radio disabled">
+  <div class="radio">
     <label>
       <input type="radio" name="familySelection" id="optionsRadios3" value="option3">
       All
     </label>
   </div>
-  
+
 <script>
 
 var testOutput;
@@ -305,8 +312,6 @@ var rect =  svg.append("rect")
       .attr("class", "node")
       .on("click", click)
       .on("dblclick", dblclick)
-      .on('mouseover', tip.show)
-      .on('mouseout', tip.hide)
       .call(force.drag);
 
 
@@ -337,6 +342,7 @@ var rect =  svg.append("rect")
   node.call(tip);
   // find family
   node.on("mouseover", function(d) {
+    tip.show(d);
     if (!clicked) {
       var descendantResults = new Set();
       getTraversal(d, descendantResults, parentToChildDirectory);
@@ -361,6 +367,7 @@ var rect =  svg.append("rect")
       }
       exit_highlight(circle, text, path);
     }
+    tip.hide(d);
   });
 
   node.on("click", function(d) {
@@ -400,6 +407,35 @@ var rect =  svg.append("rect")
       clicked = false;
   });
 
+/*var optArray = [];
+for (var i = 0; i < graph.nodes.length - 1; i++) {
+    optArray.push(graph.nodes[i].name);
+}
+optArray = optArray.sort();
+$(function () {
+    $("#search").autocomplete({
+        source: optArray
+    });
+});
+
+function searchNode() {
+    //find the node
+    var selectedVal = document.getElementById('search').value;
+    var node = svg.selectAll(".node");
+    if (selectedVal == "none") {
+        node.style("stroke", "white").style("stroke-width", "1");
+    } else {
+        var selected = node.filter(function (d, i) {
+            return d.name != selectedVal;
+        });
+        selected.style("opacity", "0");
+        var link = svg.selectAll(".link")
+        link.style("opacity", "0");
+        d3.selectAll(".node, .link").transition()
+            .duration(5000)
+            .style("opacity", 1);
+    }
+}*/
 
   var elements = document.getElementsByName("familySelection");
   for (var i=0, len=elements.length; i<len; ++i) {
@@ -493,7 +529,7 @@ function filterNodes(nodes) {
 
 function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
-  var quarterHeight = 30; //windowHeight / (quarters.length + 1);
+  var quarterHeight = 50; //windowHeight / (quarters.length + 1);
   var yOffset = 20;
   var xOffset = windowWidth / 25;
   // quarter= [quarter id, string name, year]
@@ -536,8 +572,8 @@ function placeNodes(nodes, quarters, windowHeight, windowWidth) {
   // go through nodes again assigning position for x
   for (var quarter = 0; quarter < nodesPerSection.length; quarter++) {
     var nodesInSection = nodesPerSection[quarter];
-    var sectionSize = width / nodesInSection.length;
-    var leftEdge = oddOffset * (quarter % 2) + xOffset;
+    var sectionSize = width / (nodesInSection.length + 2);
+    var leftEdge = oddOffset * (quarter % 2) + xOffset + sectionSize;
     for (var i = 0; i < nodesInSection.length; i++) {
       nodesInSection[i].x = sectionSize * i + leftEdge;
     }
@@ -607,12 +643,12 @@ function set_focus(d, circle, text, path, ancestorResults, descendantResults)
   var selections = getCheckedRadioValue("familySelection");
 
 if (highlight_trans<1)  {
-      /*circle.style("opacity", function(o) {
+      circle.style("opacity", function(o) {
                 if ((selections != 1 && ancestorResults.has(o.index)) || (selections != 0 && descendantResults.has(o.index))) {
                   return 1;
                 }
                 return highlight_trans;
-            });*/
+            });
 
       text.style("opacity", function(o) {
                 if ((selections != 1 && ancestorResults.has(o.index)) || (selections != 0 && descendantResults.has(o.index))) {
@@ -628,6 +664,7 @@ if (highlight_trans<1)  {
               return highlight_trans;
             }
       });   
+  
   }
 }
 
@@ -645,6 +682,7 @@ function exit_highlight(circle, text, path)
       path.style("fill", "none");
       path.style("opacity", "0.50");
       path.style("stroke-width:","3.0px");
+      text.style("font-weight", "normal");
 }
 
 
