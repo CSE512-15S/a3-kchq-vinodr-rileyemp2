@@ -21,7 +21,7 @@ To run, visit the live interactive TA family tree here: TODO: ....
 
 ## Story Board
 
-[storyboard.pdf]
+[storyboard.pdf](Storyboard.pdf)
 
 
 ### Changes between Storyboard and the Final Implementation
