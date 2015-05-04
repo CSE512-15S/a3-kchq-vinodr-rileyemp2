@@ -83,14 +83,13 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
-<div id= "searchArea" class="ui-widget">
+<div style="padding-left: 10px; position: absolute; left: 1100px; top: 20px;" class="ui-widget">
    <input id="search">
     <button id="searchbutton" type="button">TA Search</button>
 </div>
-<div id="searchError"></div>
+<div id="searchError" style="color: red; font-weight: bold; padding-left: 10px; position: absolute; left: 1100px; top: 50px;"></div>
 
-  <div class="familyFilter" id="legend" class="col-lg-6">
-    <h5 style="font-weight: bold">Family Selection Filter</h3>
+  <div style="padding-left: 10px; position: absolute; left: 1100px; top: 100px;" id="legend" class="col-lg-6">
     <div class="radio">
   <label>
     <input type="radio" name="familySelection" id="optionsRadios1" value="option1">
@@ -105,31 +104,13 @@ text {
   </div>
   <div class="radio">
     <label>
-      <input type="radio" name="familySelection" id="optionsRadios3" value="option3" checked="checked">
+      <input type="radio" name="familySelection" id="optionsRadios3" value="option3" checked>
       All
     </label>
   </div>
   </div>
 
 <script>
-
-$("#searchError").css("color", "red");
-$("#searchError").css("font-weight", "bold");
-$("#searchError").css("padding-left", "10px");
-$("#searchError").css("left", ($(window).width() * 0.72) + "px");
-$("#searchError").css("top", ($(window).height() * 0.08) + "px");
-$("#searchError").css("position", "absolute");
-
-$("#searchArea").css("padding-left", "10px");
-$("#searchArea").css("left", ($(window).width() * 0.72) + "px");
-$("#searchArea").css("top", ($(window).height() * 0.045) + "px");
-$("#searchArea").css("position", "absolute");
-
-$(".familyFilter").css("padding-left", "10px");
-$(".familyFilter").css("left", ($(window).width() * 0.72) + "px");
-$(".familyFilter").css("top", ($(window).height() * 0.11) + "px");
-$(".familyFilter").css("position", "absolute");
-
 
 var testOutput;
 var filenames = [];
@@ -347,7 +328,7 @@ function restOfCode(err, results) {
       .attr("width", width + "px")
       .attr("height", treeHeight + "px");
 
-  drawLines(quarters, svg, 50);
+  drawLines(quarters, svg, 30);
 
 // the area to zoom
 var rect =  svg.append("rect")
@@ -483,9 +464,9 @@ var rect =  svg.append("rect")
           if (highlight_trans<1)
           {
       
-        circle.style("opacity", 0.7);
+        circle.style("opacity", 1);
         text.style("opacity", 1);
-        path.style("opacity", 0.5);
+        path.style("opacity", 1);
       }
         }
       
@@ -673,7 +654,7 @@ function filterNodes(nodes) {
 function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
   quarterHeight = 50; //windowHeight / (quarters.length + 1);
-  var yOffset = 25 + 50;
+  var yOffset = 25 + 30;
   // quarter= [quarter id, string name, year]
   quarters.sort(function(t, o) {
     // hack: 'winter' > spring' > 'autumn'
@@ -737,9 +718,11 @@ function filterQuarters(quarters, nodesPerSection) {
 
 function drawLines(quarters, svg, yOffset) {
   // label the actual axis as first quarter
+  var width = svg[0][0].width.baseVal.value;
+
   svg.append("text")
       .attr("x", 0)
-      .attr("y", 30)
+      .attr("y", 15)
       .text("Quarter Hired")
       .attr("font-size", "15px")
       .attr("fill", "grey")
@@ -748,15 +731,14 @@ function drawLines(quarters, svg, yOffset) {
   // label line under axis label
   svg.append("line")
     .attr("x1", 0)
-    .attr("y1", quarterHeight + yOffset)
+    .attr("y1", yOffset)
     .attr("x2", width)
-    .attr("y2", quarterHeight + yOffset)
-    .attr("stroke-width", 10)
-    .attr("stroke", "red")
-    .style("opacity", 0.2);
+    .attr("y2", yOffset)
+    .attr("stroke-width", 2.5)
+    .attr("stroke", "grey")
+    .style("opacity", 0.5);
 
   // quarters = [[id, name, year]]
-  var width = svg[0][0].width.baseVal.value;
   for (var i = 0; i < quarters.length; i++) {
     // add axis label
     svg.append("text")
@@ -768,9 +750,9 @@ function drawLines(quarters, svg, yOffset) {
 
     svg.append("line")
       .attr("x1", 0)
-      .attr("y1", quarterHeight * (i + 1))
+      .attr("y1", yOffset + quarterHeight * (i + 1))
       .attr("x2", width)
-      .attr("y2", quarterHeight * (i + 1))
+      .attr("y2", yOffset + quarterHeight * (i + 1))
       .attr("stroke-width", 2)
       .attr("stroke", "grey")
       .style("opacity", 0.2);
