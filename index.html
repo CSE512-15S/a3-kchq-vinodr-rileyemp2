@@ -71,8 +71,7 @@ circle {
 }
 
 text {
-  fill: #000;
-  font: 10px sans-serif;
+  font-family: sans-serif;
   pointer-events: none;
 }
 
@@ -85,15 +84,16 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
-<div style="padding-left: 10px; position: absolute; left: 1100px; top: 80px;" class="ui-widget">
+<div style="padding-left: 10px; position: absolute; left: 1100px; top: 20px;" class="ui-widget">
    <input id="search">
-    <button id="searchbutton" type="button">Search</button>
+    <button id="searchbutton" type="button">TA Search</button>
 </div>
+<div id="searchError" style="color: red; font-weight: bold; padding-left: 10px; position: absolute; left: 1100px; top: 50px;"></div>
 
   <div style="padding-left: 10px; position: absolute; left: 1100px; top: 100px;" id="legend" class="col-lg-6">
     <div class="radio">
   <label>
-    <input type="radio" name="familySelection" id="optionsRadios1" value="option1" checked>
+    <input type="radio" name="familySelection" id="optionsRadios1" value="option1">
     Ancestors
   </label>
 </div>
@@ -105,18 +105,11 @@ text {
   </div>
   <div class="radio">
     <label>
-      <input type="radio" name="familySelection" id="optionsRadios3" value="option3">
+      <input type="radio" name="familySelection" id="optionsRadios3" value="option3" checked>
       All
     </label>
   </div>
   </div>
-
-  <defs>
-    <marker id="markerArrow" markerWidth="13" markerHeight="13" refx="2" refy="6"
-           orient="auto">
-        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
-    </marker>
-  </defs>
 
 <script>
 
@@ -145,28 +138,53 @@ var one42_link = "#FFB20E";
 var one43_link = "#3548FF";
 var clicked = false;
 
-function searchNode(path, node) {
+function searchNode(path, node, circle, text, parentToChildDirectory, childToParentDirectory) {
     //find the node
-    console.log(path);
-    console.log(node);
+
+    $("#searchError").text("");
     var selectedVal = document.getElementById('search').value;
-    if (selectedVal == "none") {
-        alert("None");
-        node.style("stroke", "white").style("stroke-width", "1");
+    selectedVal = selectedVal.toLowerCase();
+    if (selectedVal == "") {
+      $("#searchError").text("Must provide TA first name and last name.");
     } else {
+        var prevLength = node[0].length;
         var selected = node.filter(function (d, i) {
             var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
             var boo = name !== selectedVal;
             return boo;
         });
-        selected.style("opacity", "0");
-        path.style("opacity", "0");
-        selected.transition()
-            .duration(3000)
-            .style("opacity", 0.7);
-        path.transition()
-            .duration(3000)
-            .style("opacity", 1);
+
+        if (prevLength == selected[0].length) {
+          $("#searchError").text("TA not found.");
+        } else {
+          var searched;
+          node.attr("searched", function(d) {
+            var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
+            if (name === selectedVal) {
+              searched = d;
+            }
+          });
+
+          if (searched != undefined) {
+            focus_node = searched;
+
+            var descendantResults = new Set();
+            getTraversal(searched, descendantResults, parentToChildDirectory);
+
+            var ancestorResults = new Set();
+            getTraversal(searched, ancestorResults, childToParentDirectory);
+
+            exit_highlight(circle, text, path);
+            set_focus(searched, circle, text, path, ancestorResults, descendantResults)
+            set_highlight(searched, circle, text, path, ancestorResults, descendantResults);
+            clicked = true;
+            $('#svgContainer').animate({
+              scrollTop: Math.max(0, searched.y - $(window).height() * 0.3)
+            }, 500);
+          }
+        }
     }
 }
 
@@ -299,6 +317,7 @@ function restOfCode(err, results) {
   // Scale the range of the data
   v.domain([0, d3.max(links, function(d) { return d.value; })]);
   var svgContainer = d3.select("body").append("div")
+                                      .attr("id", "svgContainer")
                                       .style("height", height + "px")
                                       .style("width", width + "px")
                                       .style("left", ($(window).width() * 0.02) + "px")
@@ -310,7 +329,7 @@ function restOfCode(err, results) {
       .attr("width", width + "px")
       .attr("height", treeHeight + "px");
 
-  drawLines(quarters, svg);
+  drawLines(quarters, svg, 30);
 
 // the area to zoom
 var rect =  svg.append("rect")
@@ -383,6 +402,7 @@ var rect =  svg.append("rect")
       })
       .attr("y", 17)
       .attr("dy", ".35em")
+      .style("font-size", "10px")
       .text(function(d) { 
         if (d.f_name != undefined) {
           return d.f_name + " " + d.l_name;
@@ -435,9 +455,7 @@ var rect =  svg.append("rect")
 
     exit_highlight(circle, text, path);
     set_focus(d, circle, text, path, ancestorResults, descendantResults)
-    if (highlight_node === null) {
-       set_highlight(d, circle, text, path, ancestorResults, descendantResults);
-    }
+    set_highlight(d, circle, text, path, ancestorResults, descendantResults);
   });
 
   node.on("dblclick", function(d) {
@@ -458,7 +476,7 @@ var rect =  svg.append("rect")
       }
       clicked = false;
   });
-  $("#searchbutton").click(function () {searchNode(path, node)});
+  $("#searchbutton").click(function () {searchNode(path, node, circle, text, parentToChildDirectory, childToParentDirectory)});
 
   var elements = document.getElementsByName("familySelection");
   for (var i=0, len=elements.length; i<len; ++i) {
@@ -484,7 +502,7 @@ var legendSvgContainer = d3.select("div.jumbotron").append("svg")
                                      .attr("height",($(window).height() * 0.35) + "px")
                                      .style("position", "absolute")
                                      .style("top", ($(window).height() * 0.05) + "px")
-                                     .style("left", ($(window).height()) + "px");
+                                     .style("left", ($(window).width() * 0.48) + "px");
 
 var svgGL = legendSvgContainer.append("g")
                        .attr("transform", "translate(0, 0)");
@@ -520,6 +538,7 @@ svgGL.append("text")
 
 svgGL.append("circle")
      .style("stroke", highlight_node_color)
+     .style("stroke-width", "3px")
      .attr("cx", startX + 30)
      .attr("cy", startY + 60)
      .attr("r", 12);
@@ -636,7 +655,7 @@ function filterNodes(nodes) {
 function placeNodes(nodes, quarters, windowHeight, windowWidth) {
 
   quarterHeight = 50; //windowHeight / (quarters.length + 1);
-  var yOffset = 25;
+  var yOffset = 25 + 30;
   // quarter= [quarter id, string name, year]
   quarters.sort(function(t, o) {
     // hack: 'winter' > spring' > 'autumn'
@@ -698,36 +717,47 @@ function filterQuarters(quarters, nodesPerSection) {
   }
 }
 
-function drawLines(quarters, svg) {
-  // quarters = [[id, name, year]]
+function drawLines(quarters, svg, yOffset) {
+  // label the actual axis as first quarter
   var width = svg[0][0].width.baseVal.value;
+
+  svg.append("text")
+      .attr("x", 0)
+      .attr("y", 15)
+      .text("Quarter Hired")
+      .attr("font-size", "15px")
+      .attr("fill", "grey")
+      .style("font-weight", "bold");
+  
+  // label line under axis label
+  svg.append("line")
+    .attr("x1", 0)
+    .attr("y1", yOffset)
+    .attr("x2", width)
+    .attr("y2", yOffset)
+    .attr("stroke-width", 2.5)
+    .attr("stroke", "grey")
+    .style("opacity", 0.5);
+
+  // quarters = [[id, name, year]]
   for (var i = 0; i < quarters.length; i++) {
-    svg.append("line")
-      .attr("x1", 0)
-      .attr("y1", quarterHeight * i)
-      .attr("x2", width)
-      .attr("y2", quarterHeight * i)
-      .attr("stroke-width", 2)
-      .attr("stroke", "grey")
-      .style("opacity", 0.2);
-    
     // add axis label
     svg.append("text")
       .attr("x", 0)
-      .attr("y", quarterHeight * i + 25)
+      .attr("y", yOffset + quarterHeight * i + 30)
       .text(quarters[i][1] + " "  + quarters[i][2])
-      .attr("font-size", "12px")
+      .attr("font-size", "15px")
       .attr("fill", "grey");
-  }
-  // fencepost
-  svg.append("line")
+
+    svg.append("line")
       .attr("x1", 0)
-      .attr("y1", quarterHeight * i)
+      .attr("y1", yOffset + quarterHeight * (i + 1))
       .attr("x2", width)
-      .attr("y2", quarterHeight * i)
+      .attr("y2", yOffset + quarterHeight * (i + 1))
       .attr("stroke-width", 2)
       .attr("stroke", "grey")
       .style("opacity", 0.2);
+  }
 }
 
 function getTraversal(d, discovered, directory) {
@@ -753,9 +783,7 @@ function getTraversal(d, discovered, directory) {
 function set_highlight(d, circle, text, path, ancestorResults, descendantResults)
 {
 
-
   var selections = getCheckedRadioValue("familySelection");
-
 
   circle.style("cursor","pointer");
   if (focus_node!==null) d = focus_node;
@@ -805,6 +833,12 @@ if (highlight_trans<1)  {
                 }
                 return highlight_trans;
             });
+      text.style("font-weight", function(o) {
+                if (ancestorResults.has(o.index) || descendantResults.has(o.index)) {
+                  return "bold";
+                }
+                return "normal";
+      });
       
       path.style("opacity", function(o) {
           if ((selections != 1 && ancestorResults.has(o.target.index)) || (selections != 0 && descendantResults.has(o.source.index))) {
@@ -822,6 +856,7 @@ function exit_highlight(circle, text, path)
 {
       circle.style("opacity", "0.70");
       circle.style(towhite, "white");
+      circle.style("stroke-width", "3px");
       path.style("stroke", function(d) { 
                         if (d.type === "onefortytwo") { 
                             return one42_link; 
