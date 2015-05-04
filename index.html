@@ -247,7 +247,7 @@ function restOfCode(err, results) {
 // ================== SET UP variables for force ================== 
 
   width = $(window).width() * 0.95;
-  height = $(window).height() * 0.6;
+  height = $(window).height() * 0.70;
 
   treeHeight = 0;
   quarterHeight = 0;
@@ -476,7 +476,8 @@ var rect =  svg.append("rect")
   }
 
 // Legend/Key drawing
-
+var startX = 20
+var startY = 0
 var legendSvgContainer = d3.select("div.jumbotron").append("svg")
                                      .attr("width", ($(window).width() * 0.60) + "px")
                                      .attr("height",($(window).height() * 0.35) + "px")
@@ -488,9 +489,9 @@ var svgGL = legendSvgContainer.append("g")
                        .attr("transform", "translate(0, 0)");
 
 var squareL = svgGL.append("rect")
-                         .attr("x", 20)
-                         .attr("y", 39)
-                         .attr("width", ($(window).width() * 0.19)+ "px")
+                         .attr("x", startX)
+                         .attr("y", 1)
+                         .attr("width", ($(window).width() * 0.18)+ "px")
                          .attr("height", ($(window).width() * 0.10) + "px")
                          .style("stroke", "black")
                          .style("stroke-width", 2)
@@ -505,32 +506,32 @@ var squareL = svgGL.append("rect")
                     .text(function(d) { return "Key";});*/
 
 svgGL.append("circle")
-   .attr("cx", 50)
-   .attr("cy", 70)
+   .attr("cx", startX + 30)
+   .attr("cy", startY + 30)
    .attr("r", 12);
 
 svgGL.append("text")
-    .attr("x",90)
-    .attr("y", 75)
+    .attr("x", startX + 70)
+    .attr("y", startY + 35)
     .style("font-size", "15px")
     .style("text-anchor", "start")
     .text(function(d) { return "TA Node";});
 
 svgGL.append("circle")
      .style("stroke", highlight_node_color)
-     .attr("cx", 50)
-     .attr("cy", 100)
+     .attr("cx", startX + 30)
+     .attr("cy", startY + 60)
      .attr("r", 12);
 
 svgGL.append("text")
-    .attr("x",90)
-    .attr("y", 105)
+    .attr("x", startX + 70)
+    .attr("y", startY + 65)
     .style("font-size", "15px")
     .style("text-anchor", "start")
     .text(function(d) { return "Selected TA Node";});
 
-var lineDataEdge1 = [ { "x": 40,   "y": 120}, {"x": 50,   "y": 130}, {"x": 60, "y": 140}];
-var lineDataEdge2 = [ { "x": 40,   "y": 150}, {"x": 50,   "y": 160}, {"x": 60, "y": 170}];
+var lineDataEdge1 = [ { "x": startX + 20,   "y": startY + 80}, {"x": startX + 30,   "y": startY + 90}, {"x": startX + 40, "y": startY + 100}];
+var lineDataEdge2 = [ { "x": startX + 20,   "y": startY + 110}, {"x": startX + 30,   "y": startY + 120}, {"x": startX + 40, "y": startY + 130}];
  
  //This is the accessor function we talked about above
  var lineFunction = d3.svg.line()
@@ -545,8 +546,8 @@ svgGL.append("path")
       .attr("stroke-width", 2);
 
 svgGL.append("text")
-    .attr("x",90)
-    .attr("y", 137)
+    .attr("x", startX + 70)
+    .attr("y", startY + 97)
     .style("font-size", "15px")
     .style("text-anchor", "start")
     .text(function(d) { return "142 Parent TA to Child TA";});
@@ -558,8 +559,8 @@ svgGL.append("path")
       .attr("stroke-width", 2);
 
 svgGL.append("text")
-    .attr("x",90)
-    .attr("y", 167)
+    .attr("x",startX + 70)
+    .attr("y", startY + 127)
     .style("font-size", "15px")
     .style("text-anchor", "start")
     .text(function(d) { return "143 Parent TA to Child TA";});
