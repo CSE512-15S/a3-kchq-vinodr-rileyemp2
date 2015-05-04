@@ -83,10 +83,11 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
-<div style="padding-left: 10px; position: absolute; left: 1100px; top: 80px;" class="ui-widget">
+<div style="padding-left: 10px; position: absolute; left: 1100px; top: 20px;" class="ui-widget">
    <input id="search">
-    <button id="searchbutton" type="button">Search</button>
+    <button id="searchbutton" type="button">TA Search</button>
 </div>
+<div id="searchError" style="color: red; font-weight: bold; padding-left: 10px; position: absolute; left: 1100px; top: 50px;"></div>
 
   <div style="padding-left: 10px; position: absolute; left: 1100px; top: 100px;" id="legend" class="col-lg-6">
     <div class="radio">
@@ -108,13 +109,6 @@ text {
     </label>
   </div>
   </div>
-
-  <defs>
-    <marker id="markerArrow" markerWidth="13" markerHeight="13" refx="2" refy="6"
-           orient="auto">
-        <path d="M2,2 L2,11 L10,6 L2,2" style="fill: #000000;" />
-    </marker>
-  </defs>
 
 <script>
 
@@ -143,28 +137,53 @@ var one42_link = "#FFB20E";
 var one43_link = "#3548FF";
 var clicked = false;
 
-function searchNode(path, node) {
+function searchNode(path, node, circle, text, parentToChildDirectory, childToParentDirectory) {
     //find the node
-    console.log(path);
-    console.log(node);
+
+    $("#searchError").text("");
     var selectedVal = document.getElementById('search').value;
-    if (selectedVal == "none") {
-        alert("None");
-        node.style("stroke", "white").style("stroke-width", "1");
+    selectedVal = selectedVal.toLowerCase();
+    if (selectedVal == "") {
+      $("#searchError").text("Must provide TA first name and last name.");
     } else {
+        var prevLength = node[0].length;
         var selected = node.filter(function (d, i) {
             var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
             var boo = name !== selectedVal;
             return boo;
         });
-        selected.style("opacity", "0");
-        path.style("opacity", "0");
-        selected.transition()
-            .duration(3000)
-            .style("opacity", 0.7);
-        path.transition()
-            .duration(3000)
-            .style("opacity", 1);
+
+        if (prevLength == selected[0].length) {
+          $("#searchError").text("TA not found.");
+        } else {
+          var searched;
+          node.attr("searched", function(d) {
+            var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
+            if (name === selectedVal) {
+              searched = d;
+            }
+          });
+
+          if (searched != undefined) {
+            focus_node = searched;
+
+            var descendantResults = new Set();
+            getTraversal(searched, descendantResults, parentToChildDirectory);
+
+            var ancestorResults = new Set();
+            getTraversal(searched, ancestorResults, childToParentDirectory);
+
+            exit_highlight(circle, text, path);
+            set_focus(searched, circle, text, path, ancestorResults, descendantResults)
+            set_highlight(searched, circle, text, path, ancestorResults, descendantResults);
+            clicked = true;
+            $('#svgContainer').animate({
+              scrollTop: Math.max(0, searched.y - $(window).height() * 0.3)
+            }, 500);
+          }
+        }
     }
 }
 
@@ -297,6 +316,7 @@ function restOfCode(err, results) {
   // Scale the range of the data
   v.domain([0, d3.max(links, function(d) { return d.value; })]);
   var svgContainer = d3.select("body").append("div")
+                                      .attr("id", "svgContainer")
                                       .style("height", height + "px")
                                       .style("width", width + "px")
                                       .style("left", ($(window).width() * 0.02) + "px")
@@ -434,9 +454,7 @@ var rect =  svg.append("rect")
 
     exit_highlight(circle, text, path);
     set_focus(d, circle, text, path, ancestorResults, descendantResults)
-    if (highlight_node === null) {
-       set_highlight(d, circle, text, path, ancestorResults, descendantResults);
-    }
+    set_highlight(d, circle, text, path, ancestorResults, descendantResults);
   });
 
   node.on("dblclick", function(d) {
@@ -457,7 +475,7 @@ var rect =  svg.append("rect")
       }
       clicked = false;
   });
-  $("#searchbutton").click(function () {searchNode(path, node)});
+  $("#searchbutton").click(function () {searchNode(path, node, circle, text, parentToChildDirectory, childToParentDirectory)});
 
   var elements = document.getElementsByName("familySelection");
   for (var i=0, len=elements.length; i<len; ++i) {
@@ -483,7 +501,7 @@ var legendSvgContainer = d3.select("div.jumbotron").append("svg")
                                      .attr("height",($(window).height() * 0.35) + "px")
                                      .style("position", "absolute")
                                      .style("top", ($(window).height() * 0.05) + "px")
-                                     .style("left", ($(window).height()) + "px");
+                                     .style("left", ($(window).width() * 0.48) + "px");
 
 var svgGL = legendSvgContainer.append("g")
                        .attr("transform", "translate(0, 0)");
@@ -519,6 +537,7 @@ svgGL.append("text")
 
 svgGL.append("circle")
      .style("stroke", highlight_node_color)
+     .style("stroke-width", "3px")
      .attr("cx", startX + 30)
      .attr("cy", startY + 60)
      .attr("r", 12);
@@ -752,9 +771,7 @@ function getTraversal(d, discovered, directory) {
 function set_highlight(d, circle, text, path, ancestorResults, descendantResults)
 {
 
-
   var selections = getCheckedRadioValue("familySelection");
-
 
   circle.style("cursor","pointer");
   if (focus_node!==null) d = focus_node;
@@ -827,6 +844,7 @@ function exit_highlight(circle, text, path)
 {
       circle.style("opacity", "0.70");
       circle.style(towhite, "white");
+      circle.style("stroke-width", "3px");
       path.style("stroke", function(d) { 
                         if (d.type === "onefortytwo") { 
                             return one42_link; 
