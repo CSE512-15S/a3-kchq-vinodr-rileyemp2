@@ -84,10 +84,11 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
-<div style="padding-left: 10px; position: absolute; left: 1100px; top: 80px;" class="ui-widget">
+<div style="padding-left: 10px; position: absolute; left: 1100px; top: 20px;" class="ui-widget">
    <input id="search">
-    <button id="searchbutton" type="button">Search</button>
+    <button id="searchbutton" type="button">TA Search</button>
 </div>
+<div id="searchError" style="color: red; font-weight: bold; padding-left: 10px; position: absolute; left: 1100px; top: 50px;"></div>
 
   <div style="padding-left: 10px; position: absolute; left: 1100px; top: 100px;" id="legend" class="col-lg-6">
     <div class="radio">
@@ -140,24 +141,27 @@ var clicked = false;
 function searchNode(path, node, circle, text, parentToChildDirectory, childToParentDirectory) {
     //find the node
 
+    $("#searchError").text("");
     var selectedVal = document.getElementById('search').value;
-   // $("#searchError")[0].innerHTML = "";
+    selectedVal = selectedVal.toLowerCase();
     if (selectedVal == "") {
-     //     $("#searchError").innerHTML = "Have to provide TA first name and last name.";
+      $("#searchError").text("Must provide TA first name and last name.");
     } else {
         var prevLength = node[0].length;
         var selected = node.filter(function (d, i) {
             var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
             var boo = name !== selectedVal;
             return boo;
         });
 
         if (prevLength == selected[0].length) {
-          $("#searchError")[0].innerHTML = "TA not found.";
+          $("#searchError").text("TA not found.");
         } else {
           var searched;
           node.attr("searched", function(d) {
             var name = d['f_name'] + " " + d['l_name'];
+            name = name.toLowerCase();
             if (name === selectedVal) {
               searched = d;
             }
@@ -497,7 +501,7 @@ var legendSvgContainer = d3.select("div.jumbotron").append("svg")
                                      .attr("height",($(window).height() * 0.35) + "px")
                                      .style("position", "absolute")
                                      .style("top", ($(window).height() * 0.05) + "px")
-                                     .style("left", ($(window).height()) + "px");
+                                     .style("left", ($(window).width() * 0.48) + "px");
 
 var svgGL = legendSvgContainer.append("g")
                        .attr("transform", "translate(0, 0)");
