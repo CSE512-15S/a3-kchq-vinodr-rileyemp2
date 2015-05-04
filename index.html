@@ -82,7 +82,7 @@ text {
 
 <div style="padding-left: 10px" class="ui-widget">
    <input id="search">
-    <button type="button" onclick="searchNode()">Search</button>
+    <button id="searchbutton" type="button">Search</button>
 </div>
 
   <div id="legend" class="col-lg-6">
@@ -138,6 +138,31 @@ var default_link_color = "#888";
 var one42_link = "#FFB20E";
 var one43_link = "#3548FF";
 var clicked = false;
+
+function searchNode(path, node) {
+    //find the node
+    console.log(path);
+    console.log(node);
+    var selectedVal = document.getElementById('search').value;
+    if (selectedVal == "none") {
+        alert("None");
+        node.style("stroke", "white").style("stroke-width", "1");
+    } else {
+        var selected = node.filter(function (d, i) {
+            var name = d['f_name'] + " " + d['l_name'];
+            var boo = name !== selectedVal;
+            return boo;
+        });
+        selected.style("opacity", "0");
+        path.style("opacity", "0");
+        selected.transition()
+            .duration(3000)
+            .style("opacity", 0.7);
+        path.transition()
+            .duration(3000)
+            .style("opacity", 1);
+    }
+}
 
 // ================== PARSE CSVs ================== 
 
@@ -359,7 +384,7 @@ var rect =  svg.append("rect")
           return "";
         }
       });
-
+  
   node.call(tip);
   // find family
   node.on("mouseover", function(d) {
@@ -427,36 +452,7 @@ var rect =  svg.append("rect")
       }
       clicked = false;
   });
-
-/*var optArray = [];
-for (var i = 0; i < graph.nodes.length - 1; i++) {
-    optArray.push(graph.nodes[i].name);
-}
-optArray = optArray.sort();
-$(function () {
-    $("#search").autocomplete({
-        source: optArray
-    });
-});
-
-function searchNode() {
-    //find the node
-    var selectedVal = document.getElementById('search').value;
-    var node = svg.selectAll(".node");
-    if (selectedVal == "none") {
-        node.style("stroke", "white").style("stroke-width", "1");
-    } else {
-        var selected = node.filter(function (d, i) {
-            return d.name != selectedVal;
-        });
-        selected.style("opacity", "0");
-        var link = svg.selectAll(".link")
-        link.style("opacity", "0");
-        d3.selectAll(".node, .link").transition()
-            .duration(5000)
-            .style("opacity", 1);
-    }
-}*/
+  $("#searchbutton").click(function () {searchNode(path, node)});
 
   var elements = document.getElementsByName("familySelection");
   for (var i=0, len=elements.length; i<len; ++i) {
