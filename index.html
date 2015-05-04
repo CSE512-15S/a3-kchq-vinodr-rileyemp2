@@ -715,6 +715,15 @@ function drawLines(quarters, svg) {
       .attr("font-size", "12px")
       .attr("fill", "grey");
   }
+  // fencepost
+  svg.append("line")
+      .attr("x1", 0)
+      .attr("y1", quarterHeight * i)
+      .attr("x2", width)
+      .attr("y2", quarterHeight * i)
+      .attr("stroke-width", 2)
+      .attr("stroke", "grey")
+      .style("opacity", 0.2);
 }
 
 function getTraversal(d, discovered, directory) {
