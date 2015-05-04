@@ -33,9 +33,9 @@ path.onefortythree {
 .d3-tip {
   line-height: 1;
   font-weight: bold;
+  color: #474647;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
+  background: rgba(151, 151, 160, 1);
   border-radius: 2px;
 }
 
@@ -46,7 +46,7 @@ path.onefortythree {
   font-size: 8px;
   width: 100%;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.8);
+  color: rgba(151, 151, 160, 1);
   content: "\25BC";
   position: absolute;
   text-align: center;
@@ -57,6 +57,10 @@ path.onefortythree {
   margin: -1px 0 0 0;
   top: 100%;
   left: 0;
+}
+
+.tooltip-info {
+  color: #7E1F8F;
 }
 
 circle {
@@ -339,8 +343,8 @@ var rect =  svg.append("rect")
       .attr('class', 'd3-tip')
       .offset([-10, 0])
       .html(function(d) {
-         x = "<strong>Name:</strong> <span style='color:red'>" + d["f_name"] + " " + d["l_name"]+ "</span>";
-         x += "</br><strong>Quarters TAing:</strong> <span style='color:red'>" + d["intro_qs"] + "</span>";
+         x = "<strong>Name:</strong> <span class='tooltip-info'>" + d["f_name"] + " " + d["l_name"]+ "</span>";
+         x += "</br><strong>Quarters TAing:</strong> <span class='tooltip-info'>" + d["intro_qs"] + "</span>";
          return x;
   })
 
