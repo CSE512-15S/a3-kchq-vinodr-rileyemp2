@@ -16,7 +16,7 @@ This visualization displays the hiring data and the "family" relationships betwe
 
 ## Running Instructions
 
-To run, visit the live interactive TA family tree here: TODO: ....
+To run, visit the live interactive TA family tree here: [http://cse512-15s.github.io/a3-kchq-vinodr-rileymp2/](http://cse512-15s.github.io/a3-kchq-vinodr-rileymp2/)
 
 
 ## Story Board
