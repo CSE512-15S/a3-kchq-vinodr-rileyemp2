@@ -83,13 +83,14 @@ text {
     <p style="padding-left: 10px;"><a class="btn btn-primary btn-md" href="https://www.youtube.com/watch?v=6x9Osruma38" role="button">Learn more</a></p>
   </div>
 
-<div style="padding-left: 10px; position: absolute; left: 1100px; top: 20px;" class="ui-widget">
+<div id= "searchArea" class="ui-widget">
    <input id="search">
     <button id="searchbutton" type="button">TA Search</button>
 </div>
-<div id="searchError" style="color: red; font-weight: bold; padding-left: 10px; position: absolute; left: 1100px; top: 50px;"></div>
+<div id="searchError"></div>
 
-  <div style="padding-left: 10px; position: absolute; left: 1100px; top: 100px;" id="legend" class="col-lg-6">
+  <div class="familyFilter" id="legend" class="col-lg-6">
+    <h5 style="font-weight: bold">Family Selection Filter</h3>
     <div class="radio">
   <label>
     <input type="radio" name="familySelection" id="optionsRadios1" value="option1">
@@ -104,13 +105,31 @@ text {
   </div>
   <div class="radio">
     <label>
-      <input type="radio" name="familySelection" id="optionsRadios3" value="option3" checked>
+      <input type="radio" name="familySelection" id="optionsRadios3" value="option3" checked="checked">
       All
     </label>
   </div>
   </div>
 
 <script>
+
+$("#searchError").css("color", "red");
+$("#searchError").css("font-weight", "bold");
+$("#searchError").css("padding-left", "10px");
+$("#searchError").css("left", ($(window).width() * 0.72) + "px");
+$("#searchError").css("top", ($(window).height() * 0.08) + "px");
+$("#searchError").css("position", "absolute");
+
+$("#searchArea").css("padding-left", "10px");
+$("#searchArea").css("left", ($(window).width() * 0.72) + "px");
+$("#searchArea").css("top", ($(window).height() * 0.045) + "px");
+$("#searchArea").css("position", "absolute");
+
+$(".familyFilter").css("padding-left", "10px");
+$(".familyFilter").css("left", ($(window).width() * 0.72) + "px");
+$(".familyFilter").css("top", ($(window).height() * 0.11) + "px");
+$(".familyFilter").css("position", "absolute");
+
 
 var testOutput;
 var filenames = [];
@@ -464,9 +483,9 @@ var rect =  svg.append("rect")
           if (highlight_trans<1)
           {
       
-        circle.style("opacity", 1);
+        circle.style("opacity", 0.7);
         text.style("opacity", 1);
-        path.style("opacity", 1);
+        path.style("opacity", 0.5);
       }
         }
       
