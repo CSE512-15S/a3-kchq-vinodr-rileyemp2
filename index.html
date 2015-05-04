@@ -71,8 +71,7 @@ circle {
 }
 
 text {
-  fill: #000;
-  font: 10px sans-serif;
+  font-family: sans-serif;
   pointer-events: none;
 }
 
@@ -93,8 +92,8 @@ text {
   <div class="familyFilter" id="legend" class="col-lg-6">
     <h5 style="font-weight: bold">Family Selection Filter</h3>
     <div class="radio">
-    <label>
-    <input type="radio" name="familySelection" id="optionsRadios1" value="option1" checked>
+  <label>
+    <input type="radio" name="familySelection" id="optionsRadios1" value="option1">
     Ancestors
   </label>
 </div>
@@ -421,6 +420,7 @@ var rect =  svg.append("rect")
       })
       .attr("y", 17)
       .attr("dy", ".35em")
+      .style("font-size", "10px")
       .text(function(d) { 
         if (d.f_name != undefined) {
           return d.f_name + " " + d.l_name;
@@ -751,9 +751,9 @@ function drawLines(quarters, svg) {
     // add axis label
     svg.append("text")
       .attr("x", 0)
-      .attr("y", quarterHeight * i + 25)
+      .attr("y", quarterHeight * i + 30)
       .text(quarters[i][1] + " "  + quarters[i][2])
-      .attr("font-size", "12px")
+      .attr("font-size", "15px")
       .attr("fill", "grey");
   }
   // fencepost
@@ -840,6 +840,12 @@ if (highlight_trans<1)  {
                 }
                 return highlight_trans;
             });
+      text.style("font-weight", function(o) {
+                if (ancestorResults.has(o.index) || descendantResults.has(o.index)) {
+                  return "bold";
+                }
+                return "normal";
+      });
       
       path.style("opacity", function(o) {
           if ((selections != 1 && ancestorResults.has(o.target.index)) || (selections != 0 && descendantResults.has(o.source.index))) {
